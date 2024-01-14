@@ -1,14 +1,14 @@
-#SIYISDK Python Kütüphanesi Dokümantasyonu
-##Genel Bakış
+# SIYISDK Python Kütüphanesi Dokümantasyonu
+## Genel Bakış
 SIYISDK, SIYI kamera sistemleriyle etkileşim kurmak için tasarlanmış kapsamlı bir Python kütüphanesidir. Firmware sürümü istekleri, gimbal kontrolü, zoom işlevleri ve sıcaklık okumaları gibi çeşitli işlemleri kolaylaştırır. Kütüphane, karmaşık soket programlaması ve iş parçacığı detaylarını kapsayarak, SIYI kameraları kontrol etmek için kullanıcı dostu bir arayüz sağlar.
 
-##Kurulum
+## Kurulum
 Sisteminizde Python 3.x'in yüklü olduğundan emin olun. SIYISDK kütüphanesini doğrudan deposundan indirebilir veya git kullanarak klonlayabilirsiniz.
 
-##Temel Kullanım
+## Temel Kullanım
 Özel istek ve get fonksiyonlarına girmeden önce, SIYISDK kütüphanesinin nasıl kullanılacağına dair temel bir özet:
 
-##Başlatma ve Bağlantı:
+## Başlatma ve Bağlantı:
 
 Kütüphaneyi import edin ve SIYISDK'nın bir örneğini oluşturun. connect() metodunu çağırarak kameraya bağlanın.
 
@@ -19,20 +19,20 @@ if not cam.connect():
     print("Bağlantı başarısız")
     exit(1)
 
-##İşlemler Yapma:
+## İşlemler Yapma:
 
 Gimbal'ı hareket ettirme, zoom yapma veya sıcaklık verilerini almak gibi çeşitli işlemler için SIYISDK sınıfının metodlarını kullanın.
 
-##Bağlantıyı Kapatma:
+## Bağlantıyı Kapatma:
 
 İşlemleriniz tamamlandığında, kaynakları serbest bırakmak için düzgün bir şekilde bağlantıyı kesin.
 
 cam.disconnect()
 
-##İstek Fonksiyonları
+## İstek Fonksiyonları
 İstek fonksiyonları, SIYI kameraya komut göndermek için kullanılır. Bunlar arasında kamera kontrol komutları, zoom yapma, odaklanma ve gimbal modlarını değiştirme gibi işlemler yer alır.
 
-###Örnekler
+### Örnekler
 Otomatik Odaklama:
 
 cam.requestAutoFocus() Bu komut, kameranın otomatik odaklama özelliğini tetikler.
@@ -52,10 +52,10 @@ cam.requestFPVMode()
 
 Bu komutlar gimbal'in hareket modunu kilitleme, takip etme veya FPV (Birinci Şahıs Görünümü) modlarına değiştirir.
 
-##Get Fonksiyonları
+## Get Fonksiyonları
 Get fonksiyonları, firmware sürümü, gimbal pozisyonu veya sıcaklık okumaları gibi SIYI kameradan veri almak için kullanılır.
 
-###Örnekler
+### Örnekler
 
 Gimbal Firmware Sürümünü Almak:
 firmware_version = cam.getGimbalFirmwareVersion()
@@ -94,7 +94,7 @@ print("Kutu Sıcaklığı - Maks Sıcaklık:", max_temp, "Min Sıcaklık:", min_
 
 Kameranın görüş alanındaki belirli bir kutu alanı için sıcaklık verilerini sağlar.
 
-##İleri Düzey Kullanım
+## İleri Düzey Kullanım
 Gimbal'ın rotasyonunu ayarlamak veya belirli bir zoom seviyesi talep etmek gibi bazı işlevler, komutlar ve kontroller dizisi gerektirebilir. Örneğin:
 
 Gimbal Rotasyonunu Ayarlamak:
