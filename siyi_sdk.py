@@ -694,8 +694,7 @@ def test():
 
     if not cam.connect():
         exit(1)
-    while True:
-        print(cam.getBoxTemprature())
+    print(cam.getBoxTemprature())
         
 
 
