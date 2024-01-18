@@ -52,6 +52,10 @@ class SIYISDK:
         self._temp_msg = TemperatureMsg()
         self._box_temp_msg = BoxTemperatureMsg()
         self._rangefinder_msg = RangeFinderMsg()
+        self._point_temp_msg = PointTemperatureMsg()
+        
+        self._color_map_msg = ColorMapMSg()
+        
         self._last_att_seq=-1
 
         # Stop threads
@@ -90,6 +94,9 @@ class SIYISDK:
         self._temp_msg = TemperatureMsg()
         self._box_temp_msg = BoxTemperatureMsg()
         self._rangefinder_msg = RangeFinderMsg()
+        self._point_temp_msg = PointTemperatureMsg()
+        
+        self._color_map_msg = ColorMapMSg()
 
         return True
 
@@ -240,12 +247,18 @@ class SIYISDK:
             elif cmd_id==COMMAND.Max_Min_Temp:
                 self.parsTempratureMsg(data, seq)
             elif cmd_id==COMMAND.BOX_TEMP:
-                self.parsBoxTempratureMsg(data, seq)
+                self.parseBoxTempratureMsg(data, seq)
             elif cmd_id==COMMAND.RANGE_FİNDER:
                 self.parseRangeFinderMsg(data, seq)
             elif cmd_id==COMMAND.GIMBAL_ROT:
                 self.parseGimbalSpeedMsg(data, seq)
-
+            elif cmd_id==COMMAND.POINT_TEMP:
+                self.parsePointTempratureMsg(data, seq)    
+            elif cmd_id==COMMAND.INF_COLOR_MAP:
+                self.parseColorMapMsg(data, seq)
+            elif cmd_id==COMMAND.COLOR_MAP:
+                self.parseColorMapMsg(data, seq)   
+                        
             else:
                 self._logger.warning("CMD ID is not recognized")
         
@@ -393,8 +406,7 @@ class SIYISDK:
             self._logger.error("Error %s", e)
             return False
 
-    def parsBoxTempratureMsg(self, msg:str, seq:int):
-        print(len(msg),msg)
+    def parseBoxTempratureMsg(self, msg:str, seq:int):
         try:
             self._box_temp_msg.seq=seq
             self._box_temp_msg.startx = toInt(msg[2:4]+msg[0:2]) 
@@ -421,6 +433,35 @@ class SIYISDK:
             self._logger.error("Error %s", e)
             return False
 
+    def parsePointTempratureMsg(self, msg:str, seq:int):
+        try:
+            self._point_temp_msg.seq=seq
+            self._point_temp_msg.temprature = toInt(msg[2:4]+msg[0:2])/100.
+            self._point_temp_msg.temp_point_x = toInt(msg[6:8]+msg[4:6]) 
+            self._point_temp_msg.temp_point_y = toInt(msg[10:12]+msg[8:10])
+
+            self._logger.debug("temprature,pointx,pointy= (%s, %s, %s)",
+                                self._point_temp_msg.temprature,self._point_temp_msg.temp_point_x,self._point_temp_msg.temp_point_y)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+    
+    def parseColorMapMsg(self, msg:str, seq:int):
+        try:
+            self._color_map_msg.seq=seq
+            self._color_map_msg.pseudo_color = toInt(msg[2:4]+msg[0:2])
+
+            self._logger.debug("pseudo_color= (%s)",
+                                self._color_map_msg.pseudo_color)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+        
+        
+             
+        
     ##################################################
     #           Backand Request functions            #
     ##################################################    
@@ -469,7 +510,7 @@ class SIYISDK:
 
     def getAttitude(self):
         while True:
-            cam.requestGimbalAttitude()
+            self.requestGimbalAttitude()
             if len(str(self._att_msg.yaw)) :
                 break
             sleep(0.2)
@@ -502,8 +543,8 @@ class SIYISDK:
             return False
         return True
     
-    def requestBoxTemp(self):
-        msg = self._out_msg.BoxTempMsg()
+    def requestBoxTemp(self,startx,starty,endx,endy):
+        msg = self._out_msg.BoxTempMsg(startx,starty,endx,endy)
         if not self.sendMsg(msg):
             return False
         return True
@@ -514,7 +555,20 @@ class SIYISDK:
             return False
         return True
     
+    def requestPointTemp(self,pointx,pointy):
+        msg = self._out_msg.PointTempMsg(pointx,pointy)
+        if not self.sendMsg(msg):
+            return False
+        return True
+
+    def requestInfCMap(self):
+        msg = self._out_msg.InfColorMapMsg()
+        if not self.sendMsg(msg):
+            return False
+        return True  
     
+    
+        
     ##################################################
     #               Request functions                #
     ################################################## 
@@ -532,28 +586,28 @@ class SIYISDK:
         return True
 
     def requestZoomSet(self, target_zoom, tolerance=0.5):
-        current_zoom = cam.getZoomLevel()
+        current_zoom = self.getZoomLevel()
         zoom_step_delay = 0.5  # Başlangıçta her zoom adımı arasında bekleme süresi (saniye cinsinden)
 
         while abs(current_zoom - target_zoom) > tolerance:
             zoom_difference = target_zoom - current_zoom
             
             if zoom_difference > 0:
-                cam.requestZoomIn()
+                self.requestZoomIn()
             else:
-                cam.requestZoomOut()
+                self.requestZoomOut()
 
             # Zoom işleminin tamamlanması için bekle
             sleep(zoom_step_delay)
 
             # Durumu tekrar kontrol et
-            current_zoom = cam.getZoomLevel()
+            current_zoom = self.getZoomLevel()
 
             # Hedefe yaklaştıkça bekleme süresini azalt
             if abs(current_zoom - target_zoom) < 5:
                 zoom_step_delay = 0.1
-        cam.requestZoomHold()
-        cam.requestAutoFocus()
+        self.requestZoomHold()
+        self.requestAutoFocus()
 
     def requestPhoto(self):
         msg = self._out_msg.takePhotoMsg()
@@ -586,6 +640,16 @@ class SIYISDK:
         return True
 
 
+
+    def requestColorMap(self,color):
+        msg = self._out_msg.ColorMapMsg(color)
+        if not self.sendMsg(msg):
+            return False
+        return True        
+    
+ 
+    
+     
     ##################################################
     #                   Get functions                #
     ##################################################
@@ -600,48 +664,59 @@ class SIYISDK:
 
     def getMotionMode(self):
         while True:
-            cam.requestMoiton()
+            self.requestMoiton()
             if len(self._gmm_msg.gimbal_moution_mode) :
                 break
-            sleep(0.2)
         return self._gmm_msg.gimbal_moution_mode
 
     def getZoomLevel(self):  
         while True:
-            cam.requestZoomHold()
+            self.requestZoomHold()
             if self._manualZoom_msg.level != -1 :
                 break
-            sleep(0.2)
         return(self._manualZoom_msg.level)
 
     def getMaxMinTemprature(self):
         while True:
-            cam.requestMaxMinTemp()
+            self.requestMaxMinTemp()
             if self._temp_msg.temp_max:
                 break
-            sleep(0.2)
         return(self._temp_msg.temp_max, self._temp_msg.temp_max_x, self._temp_msg.temp_max_y,
                self._temp_msg.temp_min, self._temp_msg.temp_min_x, self._temp_msg.temp_min_y)
 
     def getRangeFinder(self):
-        cam.requestRangeFinder()
+        self.requestRangeFinder()
         while True:
-            cam.requestRangeFinder()
+            self.requestRangeFinder()
             if self._rangefinder_msg.Range_value != '':
                 break
-            sleep(0.2)
         return(self._rangefinder_msg.Range_value)
     
-    def getBoxTemprature(self):
+    def getBoxTemprature(self,startx,starty,endx,endy):
         while True:
-            cam.requestBoxTemp()
+            self.requestBoxTemp(startx,starty,endx,endy)
             if self._box_temp_msg.temp_max !='':
                 break
-            sleep(0.8)
         return(self._box_temp_msg.startx,self._box_temp_msg.starty,self._box_temp_msg.endx,self._box_temp_msg.endy,
                   self._box_temp_msg.temp_max, self._box_temp_msg.temp_max_x, self._box_temp_msg.temp_max_y,
                   self._box_temp_msg.temp_min, self._box_temp_msg.temp_min_x, self._box_temp_msg.temp_min_y)
 
+    def getPointTemprature(self,pointx,pointy):
+        while True:
+            self.requestPointTemp(pointx,pointy)
+            if self._point_temp_msg.temprature !='':
+                break
+        return (self._point_temp_msg.temprature,self._point_temp_msg.temp_point_x,self._point_temp_msg.temp_point_y)
+   
+    def getColorMap(self):
+        while True:
+            self.requestInfCMap()
+            if self._color_map_msg.seq !=0:
+                break
+            sleep(1)
+        return self._color_map_msg.pseudo_color
+    
+    
     #################################################
     #                 Set functions                 #
     #################################################
@@ -687,15 +762,12 @@ class SIYISDK:
 
 
 
-
 def test():
-    global cam
     cam=SIYISDK(debug=False)
 
     if not cam.connect():
         exit(1)
-    print(cam.getBoxTemprature())
-        
+    print(cam.getAttitude())
 
 
     cam.disconnect()

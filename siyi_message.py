@@ -1,7 +1,7 @@
 from os import stat
 from crc16_python import crc16_str_swap
 import logging
-from utils import toHex
+from utils import toHex ,Hexcon
 
 
 class COMMAND:
@@ -14,9 +14,12 @@ class COMMAND:
     PHOTO_VIDEO_HDR = '0c'
     ACQUIRE_GIMBAL_ATT = '0d'
     RANGE_FİNDER = '15'
- 
     BOX_TEMP = '13'
+    POINT_TEMP = '12'
 
+    INF_COLOR_MAP = '1A'
+    COLOR_MAP = '1B'
+    
     TargetAngle = '0e'
     GIMBAL_ROT = '07'
 
@@ -90,7 +93,19 @@ class BoxTemperatureMsg:
     temp_min_x = ''
     temp_min_y = ''
 
+class PointTemperatureMsg:
+    seq = 0
+    temp_point_x = ''
+    temp_point_y = ''
+    temprature = ''
+    
+class ColorMapMSg:
+    seq = 0
+    pseudo_color = ''
+    target_pseudo_color = ''
 
+    
+    
 #############################################
 class SIYIMESSAGE:
     """
@@ -362,12 +377,25 @@ class SIYIMESSAGE:
         cmd_id = COMMAND.RANGE_FİNDER
         return self.encodeMsg(data, cmd_id)
 
-    def BoxTempMsg(self):
-        data="0000"+"0000"+"2200"+"2200"+"01"
+    def PointTempMsg(self,pointx,pointy):
+        data = Hexcon(pointx)+ Hexcon(pointy)+"01"
+        cmd_id = COMMAND.POINT_TEMP
+        return self.encodeMsg(data, cmd_id)
+
+    def BoxTempMsg(self,startx,starty,endx,endy):
+        data = Hexcon(startx)+ Hexcon(starty)+ Hexcon(endx)+ Hexcon(endy) +"01"
         cmd_id = COMMAND.BOX_TEMP
         return self.encodeMsg(data, cmd_id)
 
-
+    def InfColorMapMsg(self):
+        data = ''
+        cmd_id = COMMAND.INF_COLOR_MAP
+        return self.encodeMsg(data, cmd_id)
+      
+    def ColorMapMsg(self,color):
+        data = toHex(color,8)
+        cmd_id = COMMAND.COLOR_MAP
+        return self.encodeMsg(data, cmd_id)
 
     def gimbalSpeedMsg(self, yaw_speed, pitch_speed):
         if yaw_speed>100:
