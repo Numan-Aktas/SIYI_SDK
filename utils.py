@@ -13,12 +13,17 @@ def toInt(hexval):
     return val
 
 def Hexcon(intval):
-    hexval = str(hex(intval))
-    hexbit = 6-len(hexval)
-    if len(hexval)<6:
-        h = hexbit*"0"+hexval[2:]
-        h = h[2:4]+h[0:2]
+    if intval < 0:
+        hexval = str(format((intval + (1 << 16)) % (1 << 16),'x'))
+        h = hexval[2:4]+hexval[0:2]
+        return h
     else:
-        h =hexval
-        h = h[2:4]+h[0:2]
-    return h
+        hexval = str(hex(intval))
+        hexbit = 6-len(hexval)
+        if len(hexval)<6:
+            h = hexbit*"0"+hexval[2:]
+            h = h[2:4]+h[0:2]
+        else:
+            h =hexval
+            h = h[2:4]+h[0:2]
+        return h

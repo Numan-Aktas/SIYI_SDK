@@ -53,8 +53,9 @@ class SIYISDK:
         self._box_temp_msg = BoxTemperatureMsg()
         self._rangefinder_msg = RangeFinderMsg()
         self._point_temp_msg = PointTemperatureMsg()
-        
         self._color_map_msg = ColorMapMSg()
+        self._image_mod_msg = ImageModMsg()
+        self._target_rotation_msg = TarRotationmsg()
         
         self._last_att_seq=-1
 
@@ -95,8 +96,9 @@ class SIYISDK:
         self._box_temp_msg = BoxTemperatureMsg()
         self._rangefinder_msg = RangeFinderMsg()
         self._point_temp_msg = PointTemperatureMsg()
-        
         self._color_map_msg = ColorMapMSg()
+        self._image_mod_msg = ImageModMsg() 
+        self._target_rotation_msg = TarRotationmsg()
 
         return True
 
@@ -258,7 +260,14 @@ class SIYISDK:
                 self.parseColorMapMsg(data, seq)
             elif cmd_id==COMMAND.COLOR_MAP:
                 self.parseColorMapMsg(data, seq)   
-                        
+            
+            
+            elif cmd_id==COMMAND.IMAGE_MOD:
+                self.parseImageModMsg(data, seq) 
+            elif cmd_id==COMMAND.IMAGE_MOD_CHANGE:
+                self.parseImageModMsg(data, seq)  
+            elif cmd_id==COMMAND.TargetAngle:
+                self.parseTargetAngleMsg(data, seq)             
             else:
                 self._logger.warning("CMD ID is not recognized")
         
@@ -459,9 +468,31 @@ class SIYISDK:
             self._logger.error("Error %s", e)
             return False
         
-        
-             
-        
+    def parseImageModMsg(self, msg:str, seq:int):
+        try:
+            self._image_mod_msg.seq=seq
+            self._image_mod_msg.vdisp_mode = toInt(msg[2:4]+msg[0:2])
+
+            self._logger.debug("vdisp_mode= (%s)",
+                                self._image_mod_msg.vdisp_mode)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+    
+    def parseTargetAngleMsg(self, msg:str, seq:int):
+        try:
+            self._att_msg.seq=seq
+            self._att_msg.yaw = toInt(msg[2:4]+msg[0:2])
+            self._att_msg.pitch = toInt(msg[6:8]+msg[4:6])
+            self._att_msg.roll = toInt(msg[10:12]+msg[8:10])
+
+            self._logger.debug("(yaw, pitch, roll= (%s, %s, %s)", 
+                                    self._att_msg.yaw, self._att_msg.pitch, self._att_msg.roll)         
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
     ##################################################
     #           Backand Request functions            #
     ##################################################    
@@ -524,51 +555,30 @@ class SIYISDK:
         if not self.sendMsg(msg):
             return False
         return True
-   
-    def requestGimbalSpeed(self, yaw_speed:int, pitch_speed:int):
-        msg = self._out_msg.gimbalSpeedMsg(yaw_speed, pitch_speed)
-        if not self.sendMsg(msg):
-            return False
-        return True  
-    
-    def requestGimbalAngle(self,yaw_angle,pitch_angle):
-        msg = self._out_msg.gimbalTargetMsg(yaw_angle, pitch_angle)
-        if not self.sendMsg(msg):
-            return False
-        return True 
-   
+     
     def requestMaxMinTemp(self):
         msg = self._out_msg.AllTempMsg()
         if not self.sendMsg(msg):
             return False
         return True
     
-    def requestBoxTemp(self,startx,starty,endx,endy):
-        msg = self._out_msg.BoxTempMsg(startx,starty,endx,endy)
-        if not self.sendMsg(msg):
-            return False
-        return True
-
     def requestRangeFinder(self):
         msg = self._out_msg.RangeFinderMsg()
         if not self.sendMsg(msg):
             return False
         return True
     
-    def requestPointTemp(self,pointx,pointy):
-        msg = self._out_msg.PointTempMsg(pointx,pointy)
-        if not self.sendMsg(msg):
-            return False
-        return True
-
     def requestInfCMap(self):
         msg = self._out_msg.InfColorMapMsg()
         if not self.sendMsg(msg):
             return False
-        return True  
-    
-    
-        
+        return True   
+      
+    def requestInfImageMode(self):
+        msg = self._out_msg.InfImageModMsg()
+        if not self.sendMsg(msg):
+            return False
+        return True 
     ##################################################
     #               Request functions                #
     ################################################## 
@@ -639,17 +649,36 @@ class SIYISDK:
             return False
         return True
 
-
-
     def requestColorMap(self,color):
         msg = self._out_msg.ColorMapMsg(color)
         if not self.sendMsg(msg):
             return False
         return True        
     
- 
+    def requestImageModChange(self,mode):
+        msg = self._out_msg.ImageModMsg(mode)
+        if not self.sendMsg(msg):
+            return False
+        return True    
     
-     
+    def requestPointTemp(self,pointx,pointy):
+        msg = self._out_msg.PointTempMsg(pointx,pointy)
+        if not self.sendMsg(msg):
+            return False
+        return True
+    
+    def requestBoxTemp(self,startx,starty,endx,endy):
+        msg = self._out_msg.BoxTempMsg(startx,starty,endx,endy)
+        if not self.sendMsg(msg):
+            return False
+        return True
+    
+    def requestGimbalAngle(self,yaw_angle:int,pitch_angle:int):
+        msg = self._out_msg.gimbalTargetMsg(yaw_angle*10, pitch_angle*10)
+        if not self.sendMsg(msg):
+            return False
+        return True
+   
     ##################################################
     #                   Get functions                #
     ##################################################
@@ -697,8 +726,7 @@ class SIYISDK:
             self.requestBoxTemp(startx,starty,endx,endy)
             if self._box_temp_msg.temp_max !='':
                 break
-        return(self._box_temp_msg.startx,self._box_temp_msg.starty,self._box_temp_msg.endx,self._box_temp_msg.endy,
-                  self._box_temp_msg.temp_max, self._box_temp_msg.temp_max_x, self._box_temp_msg.temp_max_y,
+        return(   self._box_temp_msg.temp_max, self._box_temp_msg.temp_max_x, self._box_temp_msg.temp_max_y,
                   self._box_temp_msg.temp_min, self._box_temp_msg.temp_min_x, self._box_temp_msg.temp_min_y)
 
     def getPointTemprature(self,pointx,pointy):
@@ -713,53 +741,14 @@ class SIYISDK:
             self.requestInfCMap()
             if self._color_map_msg.seq !=0:
                 break
-            sleep(1)
         return self._color_map_msg.pseudo_color
     
-    
-    #################################################
-    #                 Set functions                 #
-    #################################################
-    def setGimbalRotation(self, yaw, pitch, err_thresh=1.0, kp=4):
-
-        if (pitch >25 or pitch <-90):
-            self._logger.error("desired pitch is outside controllable range -90~25")
-            return
-
-        if (yaw >45 or yaw <-45):
-            self._logger.error("Desired yaw is outside controllable range -45~45")
-            return
-
-        th = err_thresh
-        gain = kp
-        while(True):
-            self.requestGimbalAttitude()
-            if self._att_msg.seq==self._last_att_seq:
-                self._logger.info("Did not get new attitude msg")
-                self.requestGimbalSpeed(0,0)
-                continue
-
-            self._last_att_seq = self._att_msg.seq
-
-            yaw_err = -yaw + self._att_msg.yaw # NOTE for some reason it's reversed!!
-            pitch_err = pitch - self._att_msg.pitch
-
-            self._logger.debug("yaw_err= %s", yaw_err)
-            self._logger.debug("pitch_err= %s", pitch_err)
-
-            if (abs(yaw_err) <= th and abs(pitch_err)<=th):
-                self.requestGimbalSpeed(0, 0)
-                self._logger.info("Goal rotation is reached")
+    def getImageMod(self):
+        while True:
+            self.requestInfImageMode()
+            if self._image_mod_msg.vdisp_mode !='':
                 break
-
-            y_speed_sp = max(min(100, int(gain*yaw_err)), -100)
-            p_speed_sp = max(min(100, int(gain*pitch_err)), -100)
-            self._logger.debug("yaw speed setpoint= %s", y_speed_sp)
-            self._logger.debug("pitch speed setpoint= %s", p_speed_sp)
-            self.requestGimbalSpeed(y_speed_sp, p_speed_sp)
-
-            sleep(0.1) # command frequency
-
+        return self._image_mod_msg.vdisp_mode
 
 
 def test():
@@ -767,10 +756,11 @@ def test():
 
     if not cam.connect():
         exit(1)
+    cam.requestGimbalAngle(10,-50)
+    sleep(1)
     print(cam.getAttitude())
-
-
-    cam.disconnect()
-
+    
+    cam.disconnect
+    
 if __name__=="__main__":
     test()

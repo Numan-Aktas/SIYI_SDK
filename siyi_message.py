@@ -16,11 +16,14 @@ class COMMAND:
     RANGE_FİNDER = '15'
     BOX_TEMP = '13'
     POINT_TEMP = '12'
-
     INF_COLOR_MAP = '1A'
     COLOR_MAP = '1B'
     
-    TargetAngle = '0e'
+    IMAGE_MOD = '10'
+    IMAGE_MOD_CHANGE = '11'
+    TargetAngle = '0E'
+    
+    
     GIMBAL_ROT = '07'
 
 
@@ -55,17 +58,18 @@ class GimbalSpeedMsg:
 class AttitdueMsg:
     seq=    0
     stamp=  0 # seconds
-    yaw=    0.0
-    pitch=  0.0
-    roll=   0.0
+    yaw=    ''
+    pitch=  ''
+    roll=   ''
     yaw_speed=  0.0 # deg/s
     pitch_speed=0.0
     roll_speed= 0.0
 
 class TarRotationmsg:
     seq =0
-    yaw =0
-    pitch =0
+    yaw = ''
+    pitch = ''
+    roll = ''
 
 class TemperatureMsg:
     seq = 0
@@ -104,10 +108,14 @@ class ColorMapMSg:
     pseudo_color = ''
     target_pseudo_color = ''
 
-    
+class ImageModMsg:
+    seq = 0
+    vdisp_mode =''
+    target_vdisp_mode= ''
     
 #############################################
 class SIYIMESSAGE:
+    
     """
     Structure of SIYI camera messages
     """
@@ -388,7 +396,7 @@ class SIYIMESSAGE:
         return self.encodeMsg(data, cmd_id)
 
     def InfColorMapMsg(self):
-        data = ''
+        data = ""
         cmd_id = COMMAND.INF_COLOR_MAP
         return self.encodeMsg(data, cmd_id)
       
@@ -397,6 +405,25 @@ class SIYIMESSAGE:
         cmd_id = COMMAND.COLOR_MAP
         return self.encodeMsg(data, cmd_id)
 
+    def InfImageModMsg(self):
+        data = ""
+        cmd_id = COMMAND.IMAGE_MOD
+        return self.encodeMsg(data, cmd_id)
+
+    def ImageModMsg(self,mode):
+        data = toHex(mode,8)
+        cmd_id = COMMAND.IMAGE_MOD_CHANGE
+        return self.encodeMsg(data, cmd_id)
+    
+    def gimbalTargetMsg(self,yaw,pitch):
+        data = Hexcon(yaw)+ Hexcon(pitch)
+        cmd_id = COMMAND.TargetAngle
+        return self.encodeMsg(data,cmd_id)
+   
+   
+   
+   
+    
     def gimbalSpeedMsg(self, yaw_speed, pitch_speed):
         if yaw_speed>100:
             yaw_speed=100
@@ -414,7 +441,5 @@ class SIYIMESSAGE:
         cmd_id = COMMAND.GIMBAL_ROT
         return self.encodeMsg(data, cmd_id)
 
-    def gimbalTargetMsg(self,yaw,pitch):
-        data = f"{yaw}{pitch}"
-        cmd_id = COMMAND.TargetAngle
-        return self.encodeMsg(data,cmd_id)
+    
+
