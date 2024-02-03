@@ -36,7 +36,7 @@ class SIYISDK:
         self._BUFF_SIZE=1024
 
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._rcv_wait_t = 2 # Receiving wait time
+        self._rcv_wait_t = 5 # Receiving wait time
         self._socket.settimeout(self._rcv_wait_t)
 
         self._connected = False
@@ -55,7 +55,13 @@ class SIYISDK:
         self._point_temp_msg = PointTemperatureMsg()
         self._color_map_msg = ColorMapMSg()
         self._image_mod_msg = ImageModMsg()
-        self._target_rotation_msg = TarRotationmsg()
+        self._target_rotation_msg = TarRotationmsg()   
+        self._thermal_rawdata_msg = ThermalRawData()
+        self._thermal_tempmap_msg = ThermalTempMAP()
+        self._thermal_gain_msg = ThermalGain()
+        self._thermal_params_msg= ThermalParams()
+        self._rangefinder_params_msg = RangeFinderParams()
+
         
         self._last_att_seq=-1
 
@@ -99,6 +105,11 @@ class SIYISDK:
         self._color_map_msg = ColorMapMSg()
         self._image_mod_msg = ImageModMsg() 
         self._target_rotation_msg = TarRotationmsg()
+        self._thermal_rawdata_msg = ThermalRawData()
+        self._thermal_tempmap_msg = ThermalTempMAP()
+        self._thermal_gain_msg = ThermalGain()
+        self._thermal_params_msg= ThermalParams()
+        self._rangefinder_params_msg = RangeFinderParams()    
 
         return True
 
@@ -233,7 +244,7 @@ class SIYISDK:
                 continue
             
             data, data_len, cmd_id, seq = val[0], val[1], val[2], val[3]
-            #print (data, data_len, cmd_id, seq,"siyi")
+            # print (data, "cmdidddiii", cmd_id, "siyi")
             if cmd_id==COMMAND.ACQUIRE_DEVICE_INF:
                 self.parseDevicemsg(data, seq)
             elif cmd_id==COMMAND.AUTO_FOCUS:
@@ -260,14 +271,29 @@ class SIYISDK:
                 self.parseColorMapMsg(data, seq)
             elif cmd_id==COMMAND.COLOR_MAP:
                 self.parseColorMapMsg(data, seq)   
-            
-            
             elif cmd_id==COMMAND.IMAGE_MOD:
                 self.parseImageModMsg(data, seq) 
             elif cmd_id==COMMAND.IMAGE_MOD_CHANGE:
                 self.parseImageModMsg(data, seq)  
             elif cmd_id==COMMAND.TargetAngle:
-                self.parseTargetAngleMsg(data, seq)             
+                self.parseTargetAngleMsg(data, seq)   
+            elif cmd_id==COMMAND.Thermal_Raw_data:
+                self.parseThermalRawdataMsg(data, seq)               
+            elif cmd_id==COMMAND.Thermal_Map:
+                self.parseThermalMapMsg(data, seq) 
+            elif cmd_id==COMMAND.Thermal_Gain_Get:
+                self.parseThermalGainGetMsg(data, seq) 
+            elif cmd_id==COMMAND.Thermal_Gain_Send:
+                self.parseThermalGainSendMsg(data, seq) 
+            elif cmd_id==COMMAND.Thermal_Params_Get:
+                self.parseThermalParamsGetMsg(data, seq) 
+            elif cmd_id==COMMAND.Thermal_Params_Send:
+                self.parseThermalParamsSendMsg(data, seq) 
+            elif cmd_id==COMMAND.Range_finder_params_get:
+                self.parseRangefinderparamsgetMsg(data, seq)            
+            elif cmd_id==COMMAND.Range_finder_params_send:
+                self.parseRangefinderparamssendMsg(data, seq) 
+         
             else:
                 self._logger.warning("CMD ID is not recognized")
         
@@ -493,6 +519,111 @@ class SIYISDK:
         except Exception as e:
             self._logger.error("Error %s", e)
             return False
+   
+    def parseThermalRawdataMsg(self, msg:str, seq:int):
+        try:
+            self._thermal_rawdata_msg.seq=seq
+            self._thermal_rawdata_msg.mode = toInt(msg[2:4]+msg[0:2])
+
+            self._logger.debug("rawdata_mode= (%s)",
+                                self._thermal_rawdata_msg.mode)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+   
+    def parseThermalMapMsg(self, msg:str, seq:int):
+        try:
+            self._thermal_tempmap_msg.seq=seq
+            self._thermal_tempmap_msg.ack = toInt(msg[2:4]+msg[0:2])
+
+            self._logger.debug("ThermalMap_ack= (%s)",
+                                self._thermal_tempmap_msg.ack)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+   
+    def parseThermalGainGetMsg(self, msg:str, seq:int):
+        try:
+            self._thermal_gain_msg.seq=seq
+            self._thermal_gain_msg.gain_status = toInt(msg[2:4]+msg[0:2])
+
+            self._logger.debug("gain_status= (%s)",
+                                self._thermal_gain_msg.gain_status)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+    
+    def parseThermalGainSendMsg(self, msg:str, seq:int):
+        try:
+            self._thermal_gain_msg.seq=seq
+            self._thermal_gain_msg.gain_status = toInt(msg[2:4]+msg[0:2])
+
+            self._logger.debug("gain_status= (%s)",
+                                self._thermal_gain_msg.gain_status)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+   
+    def parseThermalParamsGetMsg(self, msg:str, seq:int):
+        try:
+            self._thermal_params_msg.seq=seq
+            self._thermal_params_msg.Distance = toInt(msg[2:4]+msg[0:2]) 
+            self._thermal_params_msg.Target_emission_rate = toInt(msg[6:8]+msg[4:6])
+            self._thermal_params_msg.Humidity =  toInt(msg[10:12]+msg[8:10])
+            self._thermal_params_msg.Atmospheric_Temperature = toInt(msg[14:16]+msg[12:14]) 
+            self._thermal_params_msg.Reflection_Temperature = toInt(msg[18:20]+msg[16:18])
+
+            self._logger.debug("Dist,Ems,Hum,Ta,Tu= (%s,%s,%s,%s,%s)",
+                                self._thermal_params_msg.Distance,
+                                self._thermal_params_msg.Target_emission_rate,
+                                self._thermal_params_msg.Humidity,
+                                self._thermal_params_msg.Atmospheric_Temperature,
+                                self._thermal_params_msg.Reflection_Temperature)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False    
+    
+    def parseThermalParamsSendMsg(self, msg:str, seq:int):
+        try:
+            self._thermal_params_msg.seq=seq
+            self._thermal_params_msg.ack = toInt(msg[2:4]+msg[0:2])
+
+            self._logger.debug("Thermalsparamsack= (%s)",
+                                self._thermal_params_msg.ack)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+    
+    def parseRangefinderparamsgetMsg(self, msg:str, seq:int):
+        try:
+            self._rangefinder_params_msg.seq=seq
+            self._rangefinder_params_msg.laser_state = toInt(msg[2:4]+msg[0:2])
+
+            self._logger.debug("laser_state= (%s)",
+                                self._rangefinder_params_msg.laser_state)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+        
+    def parseRangefinderparamssendMsg(self, msg:str, seq:int):
+        try:
+            self._rangefinder_params_msg.seq=seq
+            self._rangefinder_params_msg.ack = toInt(msg[2:4]+msg[0:2])
+
+            self._logger.debug("laser_state_ack= (%s)",
+                                self._rangefinder_params_msg.ack)           
+            return True
+        except Exception as e:
+            self._logger.error("Error %s", e)
+            return False
+              
     ##################################################
     #           Backand Request functions            #
     ##################################################    
@@ -579,6 +710,31 @@ class SIYISDK:
         if not self.sendMsg(msg):
             return False
         return True 
+         
+    def requestbackand_RangefinderStatus(self):
+        msg = self._out_msg.RangefinderStatusMsg()
+        if not self.sendMsg(msg):
+            return False
+        return True 
+    
+    def requestbackand_ThermalGain(self):
+        msg = self._out_msg.ThermalGainMsg()
+        if not self.sendMsg(msg):
+            return False
+        return True 
+    
+    def requestbackand_ThermalMAP(self):
+        msg = self._out_msg.ThermalMAPMsg()
+        if not self.sendMsg(msg):
+            return False
+        return True 
+    
+    def requestbackand_ThermalParams(self):
+        msg = self._out_msg.ThermalParamsGetMsg()
+        if not self.sendMsg(msg):
+            return False
+        return True 
+    
     ##################################################
     #               Request functions                #
     ################################################## 
@@ -679,6 +835,32 @@ class SIYISDK:
             return False
         return True
    
+    def requestRangefinderStatus(self,state):
+        msg = self._out_msg.RangefinderStatusSendMsg(state)
+        if not self.sendMsg(msg):
+            return False
+        return True 
+    
+    def requestThermalGain(self,gain):
+        msg = self._out_msg.ThermalGainSendMsg(gain)
+        if not self.sendMsg(msg):
+            return False
+        return True
+    
+    def requestThermalRAWData(self,mode):
+        msg = self._out_msg.ThermalRAWDataMsg(mode)
+        if not self.sendMsg(msg):
+            return False
+        sleep(0.5)
+        if self._thermal_rawdata_msg.mode !='':             
+            return self._thermal_rawdata_msg.mode
+    
+    def requestThermalParams(self,Distance,Target_emission_rate,Humidity,Atmospheric_Temperature,Reflection_Temperature):
+        msg = self._out_msg.ThermalParamsSendMsg(Distance,Target_emission_rate,Humidity,Atmospheric_Temperature,Reflection_Temperature)
+        if not self.sendMsg(msg):
+            return False
+        return True 
+   
     ##################################################
     #                   Get functions                #
     ##################################################
@@ -750,17 +932,43 @@ class SIYISDK:
                 break
         return self._image_mod_msg.vdisp_mode
 
-
+    def getRangefinderStatus(self):
+        while True:
+            self.requestbackand_RangefinderStatus()
+            if self._rangefinder_params_msg.laser_state !='':
+                break
+        return self._rangefinder_params_msg.laser_state
+    
+    def getThermalGain(self):
+        while True:
+            self.requestbackand_ThermalGain()
+            if self._thermal_gain_msg.gain_status !='':
+                break
+        return self._thermal_gain_msg.gain_status
+    
+    def getThermalMAP(self):
+        while True:
+            self.requestbackand_ThermalMAP()
+            if self._thermal_tempmap_msg.ack !='':
+                break
+        return self._thermal_tempmap_msg.ack
+    
+    def getThermalParams(self):
+        while True:
+            self.requestbackand_ThermalParams()
+            if self._thermal_params_msg.Distance !='':
+                break
+        return self._thermal_params_msg.Distance,self._thermal_params_msg.Target_emission_rate,self._thermal_params_msg.Humidity,self._thermal_params_msg.Atmospheric_Temperature,self._thermal_params_msg.Reflection_Temperature 
+                  
 def test():
     cam=SIYISDK(debug=False)
 
     if not cam.connect():
         exit(1)
-    cam.requestGimbalAngle(10,-50)
-    sleep(1)
-    print(cam.getAttitude())
-    
-    cam.disconnect
+        
+    print(cam.getRangefinderStatus())
+    cam.disconnect()
     
 if __name__=="__main__":
     test()
+    

@@ -18,10 +18,17 @@ class COMMAND:
     POINT_TEMP = '12'
     INF_COLOR_MAP = '1A'
     COLOR_MAP = '1B'
-    
     IMAGE_MOD = '10'
     IMAGE_MOD_CHANGE = '11'
-    TargetAngle = '0E'
+    TargetAngle = '0E'    
+    Thermal_Raw_data= '34'
+    Thermal_Map= '35'    
+    Range_finder_params_get = '31'
+    Range_finder_params_send = '32'    
+    Thermal_Gain_Send = '38'
+    Thermal_Gain_Get= '37'    
+    Thermal_Params_Send = '3C'
+    Thermal_Params_Get = '3B'
     
     
     GIMBAL_ROT = '07'
@@ -111,7 +118,33 @@ class ColorMapMSg:
 class ImageModMsg:
     seq = 0
     vdisp_mode =''
-    target_vdisp_mode= ''
+    target_vdisp_mode= ''  
+    
+class ThermalRawData:
+    seq = 0
+    mode =''   
+       
+class ThermalTempMAP:
+    seq = 0
+    ack =''
+   
+class ThermalGain:
+    seq = 0
+    gain_status ='' 
+       
+class ThermalParams:
+    seq = 0
+    Distance = ''
+    Target_emission_rate = ''
+    Humidity = ''
+    Atmospheric_Temperature = ''
+    Reflection_Temperature = ''
+    ack = ''
+    
+class RangeFinderParams:
+    seq = 0
+    laser_state =''
+    ack = ''
     
 #############################################
 class SIYIMESSAGE:
@@ -420,10 +453,48 @@ class SIYIMESSAGE:
         cmd_id = COMMAND.TargetAngle
         return self.encodeMsg(data,cmd_id)
    
+    def RangefinderStatusMsg(self):
+        data = ""
+        cmd_id = COMMAND.Range_finder_params_get
+        return self.encodeMsg(data, cmd_id)
+
+    def RangefinderStatusSendMsg(self,state):
+        data = toHex(state,8)
+        cmd_id = COMMAND.Range_finder_params_send
+        return self.encodeMsg(data, cmd_id)   
    
-   
-   
+    def ThermalGainMsg(self):
+        data = ""
+        cmd_id = COMMAND.Thermal_Gain_Get
+        return self.encodeMsg(data, cmd_id)
     
+    def ThermalGainSendMsg(self,gain):
+        data = toHex(gain,8)
+        cmd_id = COMMAND.Thermal_Gain_Send
+        return self.encodeMsg(data, cmd_id)
+
+    def ThermalRAWDataMsg(self,mode):
+        data = toHex(mode,8)
+        cmd_id = COMMAND.Thermal_Raw_data
+        return self.encodeMsg(data, cmd_id)   
+   
+    def ThermalMAPMsg(self):
+        data = ""
+        cmd_id = COMMAND.Thermal_Map
+        return self.encodeMsg(data, cmd_id)
+
+    def ThermalParamsGetMsg(self):
+        data = ""
+        cmd_id = COMMAND.Thermal_Params_Get
+        return self.encodeMsg(data, cmd_id)
+
+    def ThermalParamsSendMsg(self,Dist,Ems,Hum,Ta,Tu):
+        data = Hexcon(Dist)+Hexcon(Ems)+Hexcon(Hum)+Hexcon(Ta)+Hexcon(Tu)
+        cmd_id = COMMAND.Thermal_Params_Send
+        return self.encodeMsg(data, cmd_id)   
+   
+      
+        
     def gimbalSpeedMsg(self, yaw_speed, pitch_speed):
         if yaw_speed>100:
             yaw_speed=100
