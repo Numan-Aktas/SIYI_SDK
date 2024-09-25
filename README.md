@@ -1,110 +1,91 @@
-# SIYISDK Python Kütüphanesi Dokümantasyonu
-## Genel Bakış
-SIYISDK, SIYI kamera sistemleriyle etkileşim kurmak için tasarlanmış kapsamlı bir Python kütüphanesidir. Firmware sürümü istekleri, gimbal kontrolü, zoom işlevleri ve sıcaklık okumaları gibi çeşitli işlemleri kolaylaştırır. Kütüphane, karmaşık soket programlaması ve iş parçacığı detaylarını kapsayarak, SIYI kameraları kontrol etmek için kullanıcı dostu bir arayüz sağlar.
+# SIYI SDK Python Kütüphanesi
+
+**SIYI SDK**, SIYI marka kamera sistemleriyle etkileşim kurmak için oluşturulmuş güçlü bir Python kütüphanesidir. Bu kütüphane, SIYI kamera sistemleriyle haberleşme, gimbal kontrolü, zoom işlemleri, sıcaklık verileri, ve mesafe ölçümleri gibi çok sayıda işlemi kolaylaştırır. Karmaşık soket programlaması ve iş parçacıklarıyla uğraşmak zorunda kalmadan SIYI kameralarını kontrol etmenizi sağlar.
+
+## Özellikler
+- Gimbal kontrolü (Yaw, Pitch, Roll ayarları)
+- Zoom ve odak kontrolü
+- Termal sıcaklık verisi okuma
+- Mesafe ölçer verilerini alma
+- Firmware versiyon bilgisi
+- UDP tabanlı hızlı iletişim protokolü
+
+---
+
+## Kütüphane İçeriği ve Yapısı
+
+### Dosya ve Klasörler
+
+- **siyi_sdk.py**: Kütüphanenin ana dosyası. Tüm gimbal kontrol ve komut işlemleri burada yapılır.
+- **siyi_message.py**: Mesaj işleme fonksiyonları, kamera ile haberleşme formatı buradan yönetilir.
+- **crc16_python.py**: CRC16 hesaplaması için kullanılan dosya.
+- **utils.py**: Yardımcı işlevler, veri türü dönüştürmeleri ve hata ayıklama araçlarını içerir.
+- **ZT30 User Manual v1.1.pdf & v1.2.pdf**: Kullanıcı rehberleri.
+
+---
 
 ## Kurulum
-Sisteminizde Python 3.x'in yüklü olduğundan emin olun. SIYISDK kütüphanesini doğrudan deposundan indirebilir veya git kullanarak klonlayabilirsiniz.
 
-## Temel Kullanım
-Özel istek ve get fonksiyonlarına girmeden önce, SIYISDK kütüphanesinin nasıl kullanılacağına dair temel bir özet:
+### Gereksinimler
+- Python 3.x
+- Ağa bağlı bir SIYI kamera (IP tabanlı iletişim)
 
-## Başlatma ve Bağlantı:
+### Adımlar
+1. Python ortamınızı ayarlayın.
+2. Kütüphaneyi indirerek yerel ortamınıza kurun:
 
-Kütüphaneyi import edin ve SIYISDK'nın bir örneğini oluşturun. connect() metodunu çağırarak kameraya bağlanın.
+   ```bash
+   git clone https://github.com/Numan-Aktas/SIYI_SDK.git
+   cd SIYI_SDK
+   ```
 
+## Kullanım
+### Kameraya Bağlanma
+Kütüphaneyi kullanarak SIYI kameraya bağlanmak için şu adımları takip edin:
+
+```bash
 from siyisdk import SIYISDK
 
-cam = SIYISDK()
+# Kamera bağlantısı oluştur
+cam = SIYISDK(server_ip="192.168.144.25", port=37260, debug=True)
+
+# Bağlantı kurulumu
 if not cam.connect():
     print("Bağlantı başarısız")
     exit(1)
+```
+### Gimbal ve Kamera Kontrol Fonksiyonları
+#### Gimbal Kontrolü
+SIYI SDK, kameranın gimbal kontrolü için çeşitli modlar sunar:
 
-## İşlemler Yapma:
+```bash
+# Gimbal modları
+cam.requestLockMode()     # Kilit modu
+cam.requestFollowMode()   # Takip modu
+cam.requestFPVMode()      # FPV (First-Person View) modu
+```
+#### Zoom ve Odak Fonksiyonları
+Zoom işlemi yapmak ve kameranın odak kontrolünü sağlamak için aşağıdaki fonksiyonları kullanabilirsiniz:
+```bash
+# Zoom kontrolleri
+cam.requestZoomIn()        # Zoom in
+cam.requestZoomOut()       # Zoom out
+cam.requestAutoFocus()     # Otomatik odaklama
+```
+#### Sıcaklık ve Mesafe Verilerini Alma
+Kameranın sensörlerinden gelen sıcaklık ve mesafe verilerini çekmek için şu fonksiyonları kullanabilirsiniz:
 
-Gimbal'ı hareket ettirme, zoom yapma veya sıcaklık verilerini almak gibi çeşitli işlemler için SIYISDK sınıfının metodlarını kullanın.
-
-## Bağlantıyı Kapatma:
-
-İşlemleriniz tamamlandığında, kaynakları serbest bırakmak için düzgün bir şekilde bağlantıyı kesin.
-
-cam.disconnect()
-
-## İstek Fonksiyonları
-İstek fonksiyonları, SIYI kameraya komut göndermek için kullanılır. Bunlar arasında kamera kontrol komutları, zoom yapma, odaklanma ve gimbal modlarını değiştirme gibi işlemler yer alır.
-
-### Örnekler
-Otomatik Odaklama:
-
-cam.requestAutoFocus() Bu komut, kameranın otomatik odaklama özelliğini tetikler.
-
-Zoom İçeri ve Dışarı:
-
-cam.requestZoomIn()
-cam.requestZoomOut()
-
-Bu komutlar, kameranın zoom işlevini kontrol eder. requestZoomIn() içeri zoom yapar, requestZoomOut() ise dışarı zoom yapar.
-
-Gimbal Kontrolü:
-
-cam.requestLockMode()
-cam.requestFollowMode()
-cam.requestFPVMode()
-
-Bu komutlar gimbal'in hareket modunu kilitleme, takip etme veya FPV (Birinci Şahıs Görünümü) modlarına değiştirir.
-
-## Get Fonksiyonları
-Get fonksiyonları, firmware sürümü, gimbal pozisyonu veya sıcaklık okumaları gibi SIYI kameradan veri almak için kullanılır.
-
-### Örnekler
-
-Gimbal Firmware Sürümünü Almak:
-firmware_version = cam.getGimbalFirmwareVersion()
-print(firmware_version)
-Gimbal'ın güncel firmware sürümünü alır.
-
-
-Gimbal Tutumu Almak:
-yaw, pitch, roll = cam.getAttitude()
-print("Yaw:", yaw, "Pitch:", pitch, "Roll:", roll)
-Gimbal'ın güncel yaw, pitch ve roll değerlerini alır.
-
-
-Sıcaklık Okumaları Almak:
+```bash
+# Maksimum ve minimum sıcaklık değerlerini al
 max_temp, max_x, max_y, min_temp, min_x, min_y = cam.getMaxMinTemprature()
-print("Maks Sıcaklık:", max_temp, "konum (", max_x, ",", max_y, ")")
-print("Min Sıcaklık:", min_temp, "konum (", min_x, ",", min_y, ")")
-Kameranın maksimum ve minimum sıcaklık okumalarını ve ilgili koordinatlarını alır.
+print(f"Maksimum Sıcaklık: {max_temp}, Minimum Sıcaklık: {min_temp}")
 
-
-Mesafe Ölçer Verisini Almak:
+# Mesafe ölçer verisini al
 range_value = cam.getRangeFinder()
-print("Mesafe Ölçer Değeri:", range_value, "metre")
-Kameranın mesafe ölçer tarafından ölçülen mesafeyi alır.
-
-
-Zoom Seviyesini Almak:
-zoom_level = cam.getZoomLevel()
-print("Geçerli Zoom Seviyesi:", zoom_level)
-Kameranın geçerli zoom seviyesini döndürür.
-
-
-Kutu Sıcaklığını Almak:
-startx, starty, endx, endy, max_temp, max_x, max_y, min_temp, min_x, min_y = cam.getBoxTemprature()
-print("Kutu Sıcaklığı - Maks Sıcaklık:", max_temp, "Min Sıcaklık:", min_temp)
-
-Kameranın görüş alanındaki belirli bir kutu alanı için sıcaklık verilerini sağlar.
-
-## İleri Düzey Kullanım
-Gimbal'ın rotasyonunu ayarlamak veya belirli bir zoom seviyesi talep etmek gibi bazı işlevler, komutlar ve kontroller dizisi gerektirebilir. Örneğin:
-
-Gimbal Rotasyonunu Ayarlamak:
-
-yaw_angle = 30
-pitch_angle = -10
-cam.setGimbalRotation(yaw_angle, pitch_angle)
-Gimbal'ı belirtilen yaw ve pitch açılarına döndürür.
-
-2. Belirli Bir Zoom Seviyesi Talep Etmek:
-hedef_zoom = 5.0  # Hedef zoom seviyesi
-cam.requestZoomSet(hedef_zoom)
-Kameranın zoom'unu belirli bir seviyeye ayarlar.
+print(f"Mesafe: {range_value} metre")
+```
+#### Bağlantıyı Kapatma
+İşlemler tamamlandığında bağlantıyı düzgün şekilde kapatmanız gerekmektedir:
+```bash
+cam.disconnect()
+```
